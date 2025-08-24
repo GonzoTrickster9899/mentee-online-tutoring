@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
     name:{type:String, required:true},
-    email:{ype:String, required:true, unique:true},
+    email:{type:String, required:true, unique:true},
     password:{type:String, required:true},
     image:{type:String, default:true},
     qualification:{type:String, required:true},
@@ -16,6 +16,6 @@ const userSchema = new mongoose.Schema({
     slots_booked:{type:Object, default:{}},
 }, {minimize:false})
 
-const userModel = mongoose.models.user || mongoose.model('user', userSchema)
+const userModel = mongoose.models.user || mongoose.model('tutor', userSchema)
 
 export default userModel

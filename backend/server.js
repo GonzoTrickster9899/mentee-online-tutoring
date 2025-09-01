@@ -4,6 +4,7 @@ import cors from "cors"
 import connectDB from "./config/mongodb.js"
 import connectCloudinary from "./config/cloudinary.js"
 import adminRouter from "./routes/adminRoute.js"
+import tutorRouter from "./routes/tutorRoute.js"
 
 const app = express() // Initialize Express application
 const port = process.env.PORT || 4000
@@ -17,6 +18,7 @@ app.use(cors()) // ALLOWS cors origin requests
 
 // Define API Routes
 app.use('/api/admin', adminRouter)
+app.use('/api/tutor', tutorRouter)
 // localhost:4000
 
 // Root endpoint to check api status

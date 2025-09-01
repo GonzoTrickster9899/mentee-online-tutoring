@@ -47,7 +47,11 @@ const FeaturedTutors = () => {
                         </div>
                         <div className='absolute inset-0 flex items-end bg-black/40 opacity-0 group-hover:opacity-100 transition duration-300 z-10'>
                             <div className='flex flex-col w-full gap-2 p-4'>
-                                <button onClick = {()=>{navigate(`/session/${tutor._id}`), scrollTo(0,0)}} className='btn-white !font-bold !text-xs !p-2'>View Profile</button>
+                                <button 
+                                    onClick = {()=>{
+                                        navigate(`/session/${tutor._id}`), scrollTo(0,0)
+                                    }} 
+                                    className='btn-white !font-bold !text-xs !p-2'>View Profile</button>
                                 <button onClick = {()=>{navigate(`/tutors`), scrollTo(0,0)}} className='btn-white !font-bold !text-xs !p-2'>Explore Tutors</button>
                             </div>
                         </div>

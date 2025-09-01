@@ -10,6 +10,14 @@ const AppContextProvider = (props) => {
     const [token, setToken] = useState("dummytoken")
     const currency = "$"
 
+    const getTutorsData = async ()=>{
+        try {
+            const {data} = await axios.get()
+        } catch (error) {
+            
+        }
+    }
+
     const value = {tutors, navigate, currency, token, setToken}
 
     return (

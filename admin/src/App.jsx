@@ -4,7 +4,7 @@ import { Route, Routes } from 'react-router-dom'
 import AllSessions from "./pages/admin/AllSessions"
 import Dashboard from "./pages/admin/Dashboard"
 import AddTutor from "./pages/admin/AddTutor"
-import TutorList from "./pages/admin/TutorList"
+import TutorsList from "./pages/admin/TutorsList"
 import Login from "./pages/Login"
 import { useContext } from "react"
 import { AdminContext } from "./context/AdminContext"
@@ -25,7 +25,7 @@ export default function App() {
             <Route path="/admin-dashboard" element={<Dashboard/>}/>
             <Route path="/all-sessions" element={<Dashboard/>}/>
             <Route path="/add-tutor" element={<AddTutor/>}/>
-            <Route path="/tutors-list" element={<TutorList/>}/>
+            <Route path="/tutors-list" element={<TutorsList/>}/>
           </Routes>
         </div>
       </div>

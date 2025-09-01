@@ -9,13 +9,13 @@ import { AppContext } from "../context/AppContext";
 
 const Sidebar = () => {
 
-    const {atoken, setAToken} = useContext(AdminContext)
+    const {aToken, setAToken} = useContext(AdminContext)
     const {navigate} = useContext(AppContext)
 
     const logout =()=> {
         navigate('/')
-        aToken && setAToken('')
-        aToken && localStorage.removeItem('aToken')
+        aToken && setAToken("")
+        aToken && localStorage.removeItem("aToken")
     }
 
     return (
@@ -26,9 +26,9 @@ const Sidebar = () => {
                     <span className='inline-flex'>
                         Mentee
                     </span>
-                    <span className="text-xs bg-secondary text-tertiary px-2 rounded-xl max-w-[76px]">{atoken ? "For Admin" : "For Tutor"}</span>
+                    <span className="text-xs bg-secondary text-tertiary px-2 rounded-xl max-w-[76px]">{aToken ? "For Admin" : "For Tutor"}</span>
                 </Link>
-                {atoken &&
+                {aToken &&
                 <div className="flex sm:flex-col sm:gap-x-5 gap-y-8 sm:pt-10 text-white">
                     <NavLink to="/admin-dashboard" className={({isActive})=> isActive? "active-link" : "flexStart gap-x-2 p-5 lg:pl-12 medium-15 cursor-pointer h-10"}>
                         <FaListAlt className="text-lg sm:hidden md:flex"/>
@@ -38,7 +38,7 @@ const Sidebar = () => {
                         <MdFactCheck className="text-lg sm:hidden md:flex"/>
                         <div className="hidden sm:flex">Sessions</div>
                     </NavLink>
-                    <NavLink to="/tutor-list" className={({isActive})=> isActive? "active-link" : "flexStart gap-x-2 p-5 lg:pl-12 medium-15 cursor-pointer h-10"}>
+                    <NavLink to="/tutors-list" className={({isActive})=> isActive? "active-link" : "flexStart gap-x-2 p-5 lg:pl-12 medium-15 cursor-pointer h-10"}>
                         <FaClipboardList className="text-lg sm:hidden md:flex"/>
                         <div className="hidden sm:flex">Tutor List</div>
                     </NavLink>

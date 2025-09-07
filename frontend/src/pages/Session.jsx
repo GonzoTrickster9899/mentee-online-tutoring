@@ -88,7 +88,11 @@ const Session = () => {
                     <div className="grid grid-cols-1 xl:grid-cols-[1fr_2fr] gap-x-12 gap-5">
                         {/* Tutor Image */}
                         <div className="relative max-h-[444px] max-w-[444px] overflow-hidden rounded-lg">
-                            <img src={tutorInfo.image} alt="tutorImg" className='object-contain'/>
+                            <img 
+                                src={tutorInfo.image} 
+                                alt="tutorImg" 
+                                className="object-contain"
+                            />
                             {/* Overlay */}
                             <div className='absolute inset-0 bg-black/15'/>
                         </div>
@@ -100,7 +104,10 @@ const Session = () => {
                                     <h5 className="h5 font-semibold mb-1">{tutorInfo.qualification}</h5>
                                 </div>
                                 <span className="relative pl-5 pr-2 ring-1 ring-slate-900/10 rounded-full">
-                                    <span className={`absolute top-1 left-1 h-2.5 w-2.5 rounded-full bg-freen-500 ${!tutorInfo.available && "bg-red-500"}`}/>
+                                    <span className={`absolute top-1 left-1 h-2.5 w-2.5 rounded-full bg-green-500 ${
+                                        !tutorInfo.available ? "bg-green-500" : "bg-red-500"
+                                        }`}
+                                    />
                                     <p>{tutorInfo.available ? "available" : "Unavailable"}</p>
                                 </span>
                             </div>

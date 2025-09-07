@@ -16,7 +16,7 @@ const changeAvailability = async (req,res)=>{
 }
 
 // API for get tutors list
-const tutorList = async(req,res)=>{
+const tutorsList = async(req,res)=>{
     try {
         
         const tutors = await tutorModel.find({}).select(['-password','-email'])
@@ -29,4 +29,4 @@ const tutorList = async(req,res)=>{
     }
 }
 
-export {changeAvailability, tutorList}
+export {changeAvailability, tutorsList}

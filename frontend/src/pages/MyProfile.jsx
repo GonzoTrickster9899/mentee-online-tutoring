@@ -1,24 +1,49 @@
-import React, { useState } from 'react'
-import profileImage from "../assets/user.jpg"
-import upload_icon from "../assets/upload_icon.png"
+import React, { useContext, useState } from 'react';
+import profileImage from "../assets/user.jpg";
+import upload_icon from "../assets/upload_icon.png";
+import { AppContext } from "../context/AppContext" ;
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const MyProfile = () => {
+    const [selectedImage, setSelectedImage] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const {userData, setUserData, token, backendUrl, loadUserProfileData} = 
+        useContext(AppContext);
 
-    const [selectedImage, setSelected] = useState(false)
-    const [isEditing, setIsEditing] = useState(false)
+    const handleProfileUpdate = async () => {
+        try{
+            const formData = new FormData()
 
-    const [userData, setUserData] = useState({
-        name: "John Doe",
-        image: profileImage,
-        email: 'user@one.com',
-        phone: '123456789',
-        address: {
-            city: 'New York',
-            country: 'USA'
-        },
-        gender: 'male',
-        dob:'1994-11-25',
-    })
+            formData.append("name", userData.name);
+            formData.append("email", userData.email);
+            formData.append("phone", userData.phone);
+            formData.append("address", JSON.stringify(userData.address || {}));
+            formData.append("gender", userData.gender);
+            formData.append("dob", userData.dob);
+
+            if(selectedImage){
+                formData.append("image", selectedImage);
+            }
+            const {data} = await axios.post(
+                backendUrl + '/api/user/update-profile', 
+                formData, 
+                {headers: {token}}
+            );
+
+            if(data.success){
+                toast.success(data.message)
+                await loadUserProfileData()
+                setIsEditing(false)
+                setSelectedImage(false)
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error){
+            console.log(error)
+            toast.error(error.message)
+        }
+    }
 
     const handleChange = (e)=>{
         const {name, value} = e.target
@@ -114,7 +139,18 @@ const MyProfile = () => {
                             )}
                         </div>
                     </div>
-                    <button onClick={()=> setIsEditing(prev => !prev)} className='mt-6 btn-secondary min-w-64'>{isEditing ? "Save Changes" : "Edit Profile"}</button>
+                    <button 
+                        onClick={()=> {
+                            if (isEditing) {
+                                handleProfileUpdate();
+                            } else {
+                                setIsEditing(true);
+                            }
+                        }} 
+                        className='mt-6 btn-secondary min-w-64'
+                        >
+                            {isEditing ? "Save Changes" : "Edit Profile"}
+                    </button>
                 </div>
             </div>
         )

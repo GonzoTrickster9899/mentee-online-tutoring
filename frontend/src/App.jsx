@@ -10,10 +10,12 @@ import Tutors from "./pages/Tutors";
 import Verify from "./pages/Verify";
 import Session from "./pages/Session";
 import Footer from "./components/Footer";
+import { ToastContainer } from "react-toastify";
 
 export default function App() {
   return (
     <main className="overflow-hidden bg-light text-tertiary">
+      <ToastContainer position="bottom-right"/>
       <Header />
       <Routes>
         <Route path="/" element={<Home/>}/>

@@ -5,12 +5,12 @@ import {CgMenuLeft} from "react-icons/cg"
 import {TbArrowNarrowRight} from "react-icons/tb"
 import {RiUserLine} from "react-icons/ri"
 import { AppContext } from "../context/AppContext.jsx";
-import userImage from "../assets/user.jpg"
+import upload_icon from "../assets/upload_icon.png"
 
 const Header = () => {
 
     const [menuOpened, setMenuOpened] = useState(false)
-    const {token, setToken, navigate} = useContext(AppContext)
+    const {token, setToken, navigate, userData } = useContext(AppContext)
 
     const toggleMenu = ()=>{
         setMenuOpened((prev)=> !prev)
@@ -52,11 +52,11 @@ const Header = () => {
                         />
                     )}
                     <div className="group relative">
-                        <div>
-                            {token ? (
+                        <div onClick={() => !token && navigate("/login")}>
+                            {token && userData ? (
                                 <div>
                                     <img 
-                                    src={userImage} 
+                                    src={userData.image || upload_icon} 
                                     alt="" 
                                     className="rounded-full w-12 cursor-pointer"
                                     />
@@ -70,17 +70,23 @@ const Header = () => {
                         {token && (
                             <>
                                 <ul className='bg-white shadow-sm p-2 w-36 ring-1 ring-slate-900/15 rounded absolute right-0 top-10 hidden group-hover:flex flex-col'>
-                                    <li onClick={()=> navigate("/my-profile")} className='flexBetween cursor-pointer'>
+                                    <li 
+                                        onClick={()=> navigate("/my-profile")} 
+                                        className='flexBetween cursor-pointer'
+                                    >
                                         <p>My Profile</p>
                                         <TbArrowNarrowRight className="text-[19px] text-gray-30/10"/>
                                     </li>
                                     <hr className="my-2"/>
-                                    <li onClick={()=> navigate("/my-sessions")} className="flexBetween cursor-pointer">
+                                    <li 
+                                        onClick={()=> navigate("/my-sessions")} 
+                                        className="flexBetween cursor-pointer"
+                                    >
                                         <p>My Sessions</p>
                                         <TbArrowNarrowRight className="text-[19px] text-gray-30/10"/>
                                     </li>
                                     <hr className="my-2"/>
-                                    <li className="flexBetween cursor-pointer">
+                                    <li onClick={logout} className="flexBetween cursor-pointer">
                                         <p className="text-red-500">Logout</p>
                                         <TbArrowNarrowRight className="text-[19px] text-gray-30/10"/>
                                     </li>

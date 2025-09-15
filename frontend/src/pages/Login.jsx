@@ -1,7 +1,8 @@
-import React, { useContext, useState } from 'react'
-import loginImg from '../assets/login.png'
-import { AppContext } from '../context/AppContext'
-import axios from 'axios'
+import React, { useContext, useEffect, useState } from "react";
+import loginImg from "../assets/login.png";
+import { AppContext } from "../context/AppContext";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const Login = () => {
     const { navigate, token, setToken, backendUrl } = useContext(AppContext)
@@ -16,18 +17,41 @@ const Login = () => {
 
         try {
             if(currState === "Sign Up"){
-                const {data} = await axios.post(backendUrl + '/api/user/register', {name, email, password})
+                const {data} = await axios.post(backendUrl + '/api/user/register', {
+                    name, 
+                    email, 
+                    password,
+                })
                 if(data.success){
-                    console.log(data)
+                    localStorage.setItem("token", data.token)
+                    setToken(data.token)
                 } else {
-                    
+                    toast.error(data.message)
                 }
-            } 
+            } else {
+                const { data } = await axios.post(backendUrl + "/api/user/login", {
+                    email,
+                    password,
+                });
+                if(data.success){
+                    localStorage.setItem("token", data.token)
+                    setToken(data.token)
+                    
+                } else {
+                    toast.error(data.message);
+                }
+            }
         } catch (error) {
-            
+            console.log(error)
+            toast.error(error.message)
         }
+    };
 
-    }
+    useEffect(()=>{
+        if(token){
+            navigate('/')
+        }
+    }, [token])
 
     return (
         <section className="absolute top-0 left-0 h-full w-full z-50 bg-white">

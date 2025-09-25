@@ -20,7 +20,6 @@ const AppContextProvider = (props) => {
             if(data.success){
                 // console.log(data.tutors)
                 setTutors(data.tutors)
-                
             } else {
                 toast.error(data.message)
             }
@@ -32,7 +31,9 @@ const AppContextProvider = (props) => {
 
     const loadUserProfileData = async ()=>{
         try {
-            const {data} = await axios.get(backendUrl + '/api/user/get-profile', {headers:{token}})
+            const {data} = await axios.get(backendUrl + '/api/user/get-profile', {
+                headers:{ token },
+            })
             if(data.success){
                 setUserData(data.userData)
             } else {
@@ -42,11 +43,11 @@ const AppContextProvider = (props) => {
             console.log(error)
             toast.error(error.message)
         }
-    }
+    };
 
     useEffect(()=>{
         getTutorsData()
-    }, [])
+    }, []);
 
     useEffect(()=>{
         if(token){
@@ -54,7 +55,7 @@ const AppContextProvider = (props) => {
         } else {
             setUserData(false)
         }
-    }, [token])
+    }, [token]);
 
     const value = {
         tutors, 
@@ -66,6 +67,7 @@ const AppContextProvider = (props) => {
         loadUserProfileData,
         userData,
         setUserData,
+        getTutorsData,
     };
 
     return (

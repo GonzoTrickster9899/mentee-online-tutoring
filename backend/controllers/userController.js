@@ -2,6 +2,8 @@ import validator from "validator"
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import userModel from "../models/userModels.js"
+import tutorModel from "../models/tutorModel.js";
+import sessionModel from "../models/sessionModel.js";
 import {v2 as cloudinary} from "cloudinary"
 
 // API TO REGISTER USER
@@ -110,4 +112,57 @@ const updateProfile = async (req, res) => {
     }
 }
 
-export {registerUser, loginUser, getProfile, updateProfile}
+// API FOR BOOKS SESSION
+const bookSession = async (req,res)=>{
+    try {
+        const userId = req.userId
+        const {tutId, slotDate, slotTime} = req.body
+
+        const tutData = await tutorModel.findById(tutId).select('-password')
+
+        if(!tutData.available){
+            return res.json({success:false, message:"Tutor not available"})
+        }
+
+        let slots_booked = tutData.slots_booked
+        
+        // Checking for slot availability
+        if(slots_booked[slotDate]){
+            if(slots_booked[slotDate].includes(slotTime)){
+                return res.json({success:false, message:"Slot not available"})
+            }else{
+                slots_booked[slotDate].push(slotTime)
+            }
+        } else {
+            slots_booked[slotDate] = []
+            slots_booked[slotDate].push(slotTime)
+        }
+
+        const userData = await userModel.findById(userId).select('-password')
+
+        const sessionData = {
+            userId,
+            tutId,
+            userData,
+            tutData,
+            slotDate,
+            slotTime,
+            amount:tutData.fees,
+            date:Date.now()
+        }
+
+        const newSession = new sessionModel(sessionData)
+        await newSession.save()
+
+        // Save new slots dataa in tutData
+        await tutorModel.findByIdAndUpdate(tutId, {slots_booked})
+
+        res.json({success:true, message:"Session Booked"})
+        
+    } catch (error) {
+        console.log(error)
+        res.json({success:false, message:error.message})
+    }
+}
+
+export {registerUser, loginUser, getProfile, updateProfile, bookSession}

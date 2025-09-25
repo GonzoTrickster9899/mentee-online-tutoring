@@ -19,7 +19,7 @@ const MySessions = () => {
                         {/* Session Info */}
                         <div className='block w-full'>
                             <h5 className='h5 capitalize line-clamp-1'>{tutor.name}</h5>
-                            <div>
+                            <div className="flex justify-between items-center">
                                 <div>
                                     <p>{tutor.qualification}</p>
                                     <div className="flex items-center gap-x-2">
@@ -28,8 +28,8 @@ const MySessions = () => {
                                     </div>
                                     <div className="hidden sm:flex items-center gap-x-2">
                                         <h4 className='medium-14'>Address:</h4>
-                                        <p>{tutor.location.city}</p>
-                                        <p>{tutor.location.country}</p>
+                                        <p>{tutor.location?.city}</p>
+                                        <p>{tutor.location?.country}</p>
                                     </div>
                                     <div className="flex items-center gap-x-2">
                                         <h4 className='medium-14'>Fee</h4>

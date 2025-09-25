@@ -3,12 +3,14 @@ import { AppContext } from "../context/AppContext";
 import { useParams } from "react-router-dom";
 import { FaLocationDot } from "react-icons/fa6"
 import SimilarTutors from '../components/SimilarTutors';
+import { toast } from "react-toastify";
+import axios from "axios";
 
 const dayOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
 const Session = () => {
     const {tutId} = useParams()
-    const {tutors, currency, navigate} = useContext(AppContext)
+    const {tutors, currency, navigate, getTutorsData, backendUrl, token } = useContext(AppContext)
 
     const [tutorInfo, setTutorInfo] = useState(null);
     const [availableSlots, setAvailableSlots] = useState([])
@@ -17,10 +19,13 @@ const Session = () => {
 
     // Get the tutor info
     useEffect(()=>{
+        console.log("Tutors array:", tutors);
+        console.log("tutId from params:", tutId);
         const tutor = tutors.find((t)=> t._id === tutId)
+        console.log("Found tutor:", tutor);
         setTutorInfo(tutor);
-        console.log(tutorInfo);
     },[tutors, tutId]);
+
 
     // Generate available slots
     useEffect (()=>{
@@ -32,54 +37,85 @@ const Session = () => {
 
             for(let i = 0; i < 7; i++){
                 const date = new Date(today)
-                date.setDate(today.getDate()+i)
+                date.setDate(today.getDate() + i);
 
                 const daySlots = []
-                const startTime = new Date(date)
-                const endTime = new Date(date)
+                const startTime = new Date(date);
+                const endTime = new Date(date);
 
                 // For today, start at the next available 30 min work at least 1 hour later
                 if(i === 0){
-                    startTime.setHours(Math.max(date.getHours()+1, 10))
-                    startTime.setMinutes(date.getMinutes() > 30 ? 30 : 0)
+                    startTime.setHours(Math.max(date.getHours() + 1, 10));
+                    startTime.setMinutes(date.getMinutes() > 30 ? 30 : 0);
                 } else {
-                    startTime.setHours(10, 0, 0, 0)
+                    startTime.setHours(10, 0, 0, 0);
                 }
 
-                endTime.setHours(21, 0, 0, 0)
+                endTime.setHours(21, 0, 0, 0);
 
                 // Create slots every 30 minutes
                 while(startTime < endTime){
-                    const day = startTime.getDate()
-                    const month = startTime.getMonth() + 1
-                    const year = startTime.getFullYear()
-                    const slotDate = `${day}/${month}/${year}`
+                    const day = startTime.getDate();
+                    const month = startTime.getMonth() + 1;
+                    const year = startTime.getFullYear();
+                    const slotDate = `${day}/${month}/${year}`;
                     const slotTime = startTime.toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit"
-                    })
+                    });
 
-                    daySlots.push({
-                        datetime: new Date(startTime),
-                        time: slotTime,
-                        dateString: slotDate,
-                    })
+                    //  Check if slot is Available (not booked)
+                    const isSlotAvailable = !tutorInfo.slots_booked?.[slotDate]?.includes(slotTime)
 
-                    startTime.setMinutes(startTime.getMinutes() + 30)
+                    if(isSlotAvailable){
+
+                        daySlots.push({
+                            datetime: new Date(startTime),
+                            time: slotTime,
+                            dateString: slotDate,
+                        });
+                    }
+
+                    startTime.setMinutes(startTime.getMinutes() + 30);
                 }
-                slotsPerDay.push(daySlots)
+                slotsPerDay.push(daySlots);
             }
-            setAvailableSlots(slotsPerDay)
-        }
-        generateSlots()
-    }, [tutorInfo])
 
-    // Test in console if reveal the realtime date and time
-    {/*
-    useEffect(()=>{
-        console.log(availableSlots)
-    }, [availableSlots])
-    */}
+            setAvailableSlots(slotsPerDay);
+            console.log(availableSlots);
+        }
+
+        generateSlots();
+    }, [tutorInfo]);
+
+    const bookSession = async () => {
+        if(!token){
+            toast.warn('Login to book session')
+            return navigate('/login')
+        }
+        try {
+            const date = availableSlots[selectedDayIndex][0].datetime
+
+            let day = date.getDate()
+            let month = date.getMonth() + 1
+            let year = date.getFullYear()
+
+            const slotDate = `${day}/${month}/${year}`
+            
+            const {data} = await axios.post(backendUrl + "/api/user/book-session", {tutId, slotDate, slotTime: selectedTime}, {headers:{token}})
+
+            if(data.success){
+                toast.success(data.message)
+                getTutorsData()
+                navigate('/my-sessions')
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            console.log(error)
+            toast.error(error.message)
+        }
+    }
 
     return (
         <div className="max-padd-container py-28">
@@ -105,7 +141,7 @@ const Session = () => {
                                 </div>
                                 <span className="relative pl-5 pr-2 ring-1 ring-slate-900/10 rounded-full">
                                     <span className={`absolute top-1 left-1 h-2.5 w-2.5 rounded-full bg-green-500 ${
-                                        !tutorInfo.available ? "bg-green-500" : "bg-red-500"
+                                        tutorInfo.available ? "bg-green-500" : "bg-red-500"
                                         }`}
                                     />
                                     <p>{tutorInfo.available ? "available" : "Unavailable"}</p>
@@ -130,7 +166,7 @@ const Session = () => {
                             </div>
                             <p className="flex gap-2 mb-2 mt-5">
                                 <FaLocationDot />
-                                <span>{tutorInfo.location.city}, {tutorInfo.location.country}</span>
+                                <span>{tutorInfo.location?.city}, {tutorInfo.location?.country}</span>
                             </p>
                             <hr className="border-none h-[1px] bg-tertiary/10 mb-4"/>
                             <h4 className="h4">About Me</h4>
@@ -157,12 +193,18 @@ const Session = () => {
                                 {/* Time Slot Scroll */}
                                 <div className="flex gap-3 overflow-x-scroll mt-4 max-w-[777px]">
                                     {availableSlots[selectedDayIndex]?.map((slot, i)=>(
-                                        <div key={i} onClick={()=>setSelectedTime(slot.time)} className={`text-xs font-light flexCenter min-w-20 py-2 rounded-full cursor-pointer ${slot.time === selectedTime ? "bg-secondary" : "text-gray-400 border border-gray-300"}`}>
+                                        <div key={i} onClick={()=>setSelectedTime(slot.time)} className={`text-xs font-light flexCenter min-w-20 py-2 rounded-full cursor-pointer ${slot.time === selectedTime 
+                                                ? "bg-secondary" 
+                                                : "text-gray-400 border border-gray-300"
+                                            }`}
+                                        >
                                             {slot.time.toLowerCase()}
                                         </div>
                                     ))}
                                 </div>
-                                <button className="btn-secondary !text-tertiary mt-4">Book a Session</button>
+                                <button onClick={bookSession} className="btn-secondary !text-tertiary mt-4">
+                                    Book a Session
+                                </button>
                             </div>
                         </div>
                     </div>

@@ -5,6 +5,11 @@ import userModel from "../models/userModels.js"
 import tutorModel from "../models/tutorModel.js";
 import sessionModel from "../models/sessionModel.js";
 import {v2 as cloudinary} from "cloudinary"
+import Strip from "stripe"
+
+// STRIPE GATEWAY
+const stripe = new Strip(process.env.STRIPE_SECRET_KEY)
+const currency = process.env.CURRENCY
 
 // API TO REGISTER USER
 const registerUser = async(req,res)=>{
@@ -165,4 +170,120 @@ const bookSession = async (req,res)=>{
     }
 }
 
-export {registerUser, loginUser, getProfile, updateProfile, bookSession}
+// API TO GET USE SESSIONS FOR FRONTEND 
+const listSessions = async(req, res)=>{
+    try{
+        const userId = req.userId
+        const sessions = await sessionModel.find({userId})
+
+        res.json({success:true, sessions})
+
+    } catch (error) {
+        console.log(error)
+        res.json({success:false,  message:error.message})
+    }
+}
+
+// API FOR CANCEL THE SESSION
+const cancelSession  = async (req,res)=>{
+    try{
+        const userId = req.userId
+        const {sessionId} = req.body
+        const sessionData = await sessionModel.findById(sessionId)
+
+        // Verify session User
+        if(sessionData.userId !== userId){
+            return res.json({success:false, message:"Unauthorized access"})
+        }
+
+        await sessionModel.findByIdAndUpdate(sessionId, {cancelled:true})
+
+        // Release tutor slot
+        const {tutId, slotDate, slotTime} = sessionData
+        const tutData = await tutorModel.findById(tutId)
+
+        let slots_booked = tutData.slots_booked
+        slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime)
+
+        await tutorModel.findByIdAndUpdate(tutId, {slots_booked})
+
+        res.json({success:true, message:"Session Cancelled"})
+    } catch (error) {
+        console.log(error)
+        res.json({success:false, message:error.message})
+    }
+}
+
+// API FOR STRIPE PAYMENT
+const paymentStripe = async(req,res)=>{
+    try{
+        const userId = req.userId
+        const {sessionId} = req.body
+        const origin = req.headers.origin
+        
+        const sessionData = await sessionModel.findById(sessionId)
+        if(!sessionData || sessionData.cancelled){
+            return res.json({success:false, message:"Session not found or cancelled"})
+        }
+
+        // Verify session user
+        if(sessionData.userId !== userId){
+            return res.json({success:false, message:"Unauthorized access"})
+        }
+
+        const amount = sessionData.amount * 100 // amount in cents
+
+        // Ceate Stripe Checkout Session
+        const stripeSession = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [
+                {
+                    price_data: {
+                        currency:currency,
+                        product_data:{
+                            name: `Session with ${sessionData.tutData.name}`,
+                            description: `Subject: ${sessionData.tutData.subject}`
+                        },
+                        unit_amount: amount,
+                    },
+                    quantity: 1,
+                }
+            ],
+            mode:'payment',
+            success_url: `${origin}/my-sessions?success=true&sessionId=${sessionId}`,
+            cancel_url: `${origin}/my-sessions?success=false`,
+        })
+
+        res.json({success:true, session_url:stripeSession.url})
+    } catch (error) {
+        console.log(error)
+        res.json({success:false, message:error.message})
+    }
+}
+
+// API TO VERIFY STRIPE PAYMENT (TEMPORARY METHOD - SECURE METHOD IS USING WEBHOOKS)
+
+const verifyStripe = async(req, res) => {
+    try {
+        const {sessionId} = req.query
+        console.log("Verifying paymenf for session ID:", sessionId)
+
+        const session = await sessionModel.findById(sessionId)
+        if(!session){
+            console.log("Session not found for Id:", sessionId)
+            return res.json({success:false, message:"Session not found"})
+        }
+
+        // Update payment status to true
+        session.payment = true
+        await session.save()
+        console.log('Payment status updated for session:', session)
+
+        res.json({success:true, message:"Payment status updated"})
+    } catch (error) {
+        console.log(error)
+        res.json({success:false, message:error.message})
+    }
+}
+
+export {registerUser, loginUser, getProfile, updateProfile, bookSession, listSessions, cancelSession, paymentStripe, verifyStripe}

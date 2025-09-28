@@ -144,7 +144,7 @@ const Session = () => {
                                         tutorInfo.available ? "bg-green-500" : "bg-red-500"
                                         }`}
                                     />
-                                    <p>{tutorInfo.available ? "available" : "Unavailable"}</p>
+                                    <p>{tutorInfo.available ? "Available" : "Unavailable"}</p>
                                 </span>
                             </div>
                         

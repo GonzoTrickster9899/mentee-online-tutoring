@@ -23,7 +23,7 @@ export default function App() {
             {/* ADMIN ROUTES */}
             <Route path="/" element={<></>}/>
             <Route path="/admin-dashboard" element={<Dashboard/>}/>
-            <Route path="/all-sessions" element={<Dashboard/>}/>
+            <Route path="/all-sessions" element={<AllSessions/>}/>
             <Route path="/add-tutor" element={<AddTutor/>}/>
             <Route path="/tutors-list" element={<TutorsList/>}/>
           </Routes>

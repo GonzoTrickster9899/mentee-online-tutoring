@@ -11,6 +11,7 @@ const AdminContextProvider = (props) => {
     const {backendUrl} = useContext(AppContext)
 
     const [tutors, setTutors] = useState([])
+    const [sessions, setSessions] = useState([])
 
     
     const getAllTutors = async ()=>{
@@ -42,8 +43,40 @@ const AdminContextProvider = (props) => {
         }
     }
 
-    const value = { aToken, setAToken, getAllTutors, tutors, changeAvailability}
-  
+
+    const getAllSessions = async ()=>{
+        try {
+            const {data} = await axios.get(backendUrl + '/api/admin/sessions', {headers: {aToken}})
+            if(data.success){
+                setSessions(data.sessions)
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            console.log(error)
+            toast.error(error.message)
+
+        }
+    }
+    
+    const cancelSession = async (sessionId)=>{
+        try {
+            const {data} = await axios.post(backendUrl + '/api/admin/cancel-session', {sessionId}, {headers: {aToken}})
+
+            if(data.success){
+                toast.success(data.message)
+                getAllSessions()
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            console.log(error)
+            toast.error(error.message)
+        }
+    }
+
+    const value = { aToken, setAToken, getAllTutors, tutors, changeAvailability, getAllSessions, sessions, setSessions, cancelSession}
+
     return (
         <AdminContext.Provider value={value}>{props.children}</AdminContext.Provider>
     )

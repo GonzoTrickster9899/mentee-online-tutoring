@@ -2,6 +2,7 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import {v2 as cloudinary} from "cloudinary";
 import tutorModel from "../models/tutorModel.js";
+import sessionModel from "../models/sessionModel.js";
 import jwt from "jsonwebtoken"
 
 // API FOR ADDING A TUTOR FOR ADMIN PANEL
@@ -123,4 +124,40 @@ const allTutors = async (req,res)=>{
     }
 }
 
-export { addTutor, loginAdmin, allTutors };
+// API TO GET ALL SESSION LIST
+const sessionsAdmin = async (req, res) => {
+    try {
+        const sessions = await sessionModel.find({});
+        res.json({ success: true, sessions });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// API TO CANCEL THE SESSION
+const sessionCancel  = async (req,res)=>{
+    try{
+        const userId = req.userId
+        const {sessionId} = req.body
+        const sessionData = await sessionModel.findById(sessionId)
+
+        await sessionModel.findByIdAndUpdate(sessionId, {cancelled:true})
+
+        // Release tutor slot
+        const {tutId, slotDate, slotTime} = sessionData
+        const tutData = await tutorModel.findById(tutId)
+
+        let slots_booked = tutData.slots_booked
+        slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime)
+
+        await tutorModel.findByIdAndUpdate(tutId, {slots_booked})
+
+        res.json({success:true, message:"Session Cancelled"})
+    } catch (error) {
+        console.log(error)
+        res.json({success:false, message:error.message})
+    }
+}
+
+export { addTutor, loginAdmin, allTutors, sessionsAdmin, sessionCancel };

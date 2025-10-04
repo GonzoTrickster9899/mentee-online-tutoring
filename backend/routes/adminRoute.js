@@ -1,7 +1,7 @@
 import express from "express"
 import upload from "../middlewares/multer.js"
 import authAdmin from "../middlewares/authAdmin.js"
-import { addTutor, allTutors, loginAdmin, sessionCancel, sessionsAdmin } from "../controllers/adminController.js"
+import { addTutor, adminDashboard, allTutors, loginAdmin, sessionCancel, sessionsAdmin } from "../controllers/adminController.js"
 import { changeAvailability } from "../controllers/tutorController.js"
 
 const adminRouter = express.Router()
@@ -12,5 +12,6 @@ adminRouter.post('/all-tutors', authAdmin, allTutors)
 adminRouter.post('/change-availability', authAdmin, changeAvailability)
 adminRouter.get('/sessions', authAdmin, sessionsAdmin)
 adminRouter.post('/cancel-session', authAdmin, sessionCancel)
+adminRouter.post('/dashboard', authAdmin, adminDashboard)
 
 export default adminRouter

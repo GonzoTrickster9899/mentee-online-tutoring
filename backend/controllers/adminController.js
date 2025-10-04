@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import {v2 as cloudinary} from "cloudinary";
 import tutorModel from "../models/tutorModel.js";
 import sessionModel from "../models/sessionModel.js";
+import userModel from "../models/userModels.js";
 import jwt from "jsonwebtoken"
 
 // API FOR ADDING A TUTOR FOR ADMIN PANEL
@@ -160,4 +161,25 @@ const sessionCancel  = async (req,res)=>{
     }
 }
 
-export { addTutor, loginAdmin, allTutors, sessionsAdmin, sessionCancel };
+// API TO GET DASHBOARD DATA
+const adminDashboard = async (req,res)=>{
+    try{
+        const tutors = await tutorModel.find({})
+        const users = await userModel.find({})
+        const sessions = await sessionModel.find({})
+
+        const dashData = {
+            tutors: tutors.length,
+            sessions: sessions.length,
+            clients: users.length,
+            latestSessions: sessions.reverse().slice(0, 5)
+        }
+
+        res.json({success:true, dashData})
+    } catch (error) {
+        console.log(error)
+        res.json({success:false, message:error.message})
+    }
+}
+
+export { addTutor, loginAdmin, allTutors, sessionsAdmin, sessionCancel, adminDashboard };

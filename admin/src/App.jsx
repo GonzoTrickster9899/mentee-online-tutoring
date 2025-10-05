@@ -8,12 +8,17 @@ import TutorsList from "./pages/admin/TutorsList"
 import Login from "./pages/Login"
 import { useContext } from "react"
 import { AdminContext } from "./context/AdminContext"
+import { TutorContext } from "./context/TutorContext"
+import TutorDashboard from "./pages/tutor/Dashboard"
+import TutorProfile from "./pages/tutor/Profile"
+import TutorSessions from "./pages/tutor/Sessions"
 
 export default function App() {
 
-  const {aToken, seAToken} = useContext(AdminContext)
+  const {aToken, setAToken} = useContext(AdminContext)
+  const {tToken, setTToken} = useContext(TutorContext)
 
-  return aToken ? (
+  return aToken || tToken ? (
     <main>
       <ToastContainer  position="bottom-right"/>
       <div className="bg-light text-tertiary">
@@ -26,6 +31,11 @@ export default function App() {
             <Route path="/all-sessions" element={<AllSessions/>}/>
             <Route path="/add-tutor" element={<AddTutor/>}/>
             <Route path="/tutors-list" element={<TutorsList/>}/>
+
+            {/* TUTOR ROUTES */}
+            <Route path="/tutor-dashboard" element={<TutorDashboard/>}/>
+            <Route path="/tutor-profile" element={<TutorProfile/>}/>
+            <Route path="/tutor-sessions" element={<TutorSessions/>}/>
           </Routes>
         </div>
       </div>

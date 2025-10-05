@@ -4,9 +4,9 @@ export const TutorContext = createContext();
 
 const TutorContextProvider = (props) => {
     
-    const [aToken, setAToken] = useState('dummytoken')
+    const [tToken, setTToken] = useState(localStorage.getItem('tToken')?localStorage.getItem('tToken'):"")
     
-    const value = {}
+    const value = {tToken, setTToken}
   
     return (
         <TutorContext.Provider value={value}>{props.children}</TutorContext.Provider>

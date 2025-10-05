@@ -1,8 +1,9 @@
 import express from "express"
-import { tutorsList } from "../controllers/tutorController.js"
+import { loginTutor, tutorsList } from "../controllers/tutorController.js"
 
 const tutorRouter =  express.Router()
 
 tutorRouter.get('/list', tutorsList)
+tutorRouter.post('/login', loginTutor)
 
 export default tutorRouter

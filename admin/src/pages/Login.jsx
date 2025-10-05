@@ -4,6 +4,7 @@ import axios from "axios";
 import { AppContext } from "../context/AppContext"
 import { AdminContext } from "../context/AdminContext";
 import { toast } from "react-toastify";
+import { TutorContext } from "../context/TutorContext";
 
 const Login = () => {
     const [email, setEmail] = useState("");
@@ -11,6 +12,7 @@ const Login = () => {
     const [currState, setCurrState] = useState("Admin");
     const {navigate, backendUrl} = useContext(AppContext);
     const {setAToken} = useContext(AdminContext);
+    const {setTToken} = useContext(TutorContext)
 
     const onSubmitHandler = async (e)=>{
         try {
@@ -21,6 +23,16 @@ const Login = () => {
                 if(data.success){
                     localStorage.setItem('aToken', data.token)
                     setAToken(data.token)
+                } else {
+                    toast.error(data.message)
+                }
+            } else {
+                const {data} = await axios.post(backendUrl + '/api/tutor/login', {email, password})
+                if(data.success){
+                    localStorage.setItem('tToken', data.token)
+                    setTToken(data.token)
+                    navigate('/tutor-dashboard')
+                    console.log(data.token)
                 } else {
                     toast.error(data.message)
                 }

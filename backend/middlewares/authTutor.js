@@ -2,14 +2,14 @@ import jwt from "jsonwebtoken"
 
 // User authentication middleware
 
-const authUser = async (req,res,next)=>{
+const authTutor = async (req,res,next)=>{
     try {
 
-        const {token} = req.headers
-        if(!token){
+        const {ttoken} = req.headers
+        if(!ttoken){
             return res.json({sucess:false, message:"Not Authorized Please Login Again"})
         }
-        const token_decode = jwt.verify(token, process.env.JWT_SECRET)
+        const token_decode = jwt.verify(ttoken, process.env.JWT_SECRET)
 
         req.userId = token_decode.id
         
@@ -21,4 +21,4 @@ const authUser = async (req,res,next)=>{
     }
 }
 
-export default authUser
+export default authTutor

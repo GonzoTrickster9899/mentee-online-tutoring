@@ -137,7 +137,7 @@ const MySessions = () => {
                                 </div>
                                 {/* Status & Button */}
                                 <div className="flex flex-col gap-2">
-                                    <button onClick={() => sessionStripe(session._id)} disabled={session.payment || session.isCompleted} className={`${(session.isCompleted || session.cancelled) ? "hidden" : "block"} disabled:cursor-not-allowed disabled:text-green-500 ${session.payment || session.isCompleted ? "btn-ghost" : "btn-light"} max-md:!px-1 !py-1 !text-xs !rounded`}>
+                                    <button onClick={() => sessionStripe(session._id)} disabled={session.payment || session.isCompleted} className={`${(session.cancelled) ? "hidden" : "block"} disabled:cursor-not-allowed disabled:text-green-500 ${session.payment || session.isCompleted ? "btn-ghost" : "btn-light"} max-md:!px-1 !py-1 !text-xs !rounded`}>
                                         {session.isCompleted ? "Completed" : session.payment ? "Paid" : "Pay"}
                                     </button>
                                     <button onClick={() => cancelSession(session._id)} disabled={session.cancelled} className={`${session.isCompleted || session.payment ? "hidden" : "block"} disabled:cursor-not-allowed disabled:text-red-500 ${session.cancelled ? "btn-ghost" : "btn-light"} max-md:!px-1 !py-1 !text-xs !rounded`}>

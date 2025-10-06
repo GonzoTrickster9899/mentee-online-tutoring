@@ -1,4 +1,5 @@
 import tutorModel from "../models/tutorModel.js"
+import sessionModel from "../models/sessionModel.js";
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 
@@ -56,4 +57,58 @@ const loginTutor = async (req, res) => {
     }
 }
 
-export {changeAvailability, tutorsList, loginTutor}
+// API TO GET TUTOR SESSIONS FOR TUTOR PANEL
+const sessionsTutor = async(req,res)=>{
+    try{
+        const tutId = req.userId
+        const sessions = await sessionModel.find({tutId})
+
+        res.json({success:true, sessions})
+
+    } catch (error) {
+        console.log(error)
+        res.json({success:false, message:error.message})
+
+    }
+}
+
+// API MARK THE SESSION COMPLETED FOR TUTOR PANEL
+const sessionComplete = async(req, res)=>{
+    try {
+        const tutId = req.userId
+        const {sessionId} = req.body
+        const sessionData = await sessionModel.findById(sessionId)
+        if(sessionData && sessionData.tutId === tutId){
+            await sessionModel.findByIdAndUpdate(sessionId, {isCompleted:true})
+            return res.json({success:true, message:"Session Completed"})
+        } else {
+            return res.json({success:false, message: "Action Failed"})
+        }
+
+    } catch (error) {
+        console.log(error)
+        res.json({success:false, message:error.message})
+    
+    }
+}
+
+// API MARK THE SESSION COMPLETED FOR TUTOR PANEL
+const sessionCancel = async(req, res)=>{
+    try {
+        const tutId = req.userId
+        const {sessionId} = req.body
+        const sessionData = await sessionModel.findById(sessionId)
+        if(sessionData && sessionData.tutId === tutId){
+            await sessionModel.findByIdAndUpdate(sessionId, {cancelled:true})
+            return res.json({success:true, message:"Session Cancelled"})
+        } else {
+            return res.json({success:false, message: "Action Failed"})
+        }
+        
+    } catch (error) {
+        console.log(error)
+        res.json({success:false, message:error.message})
+    }
+}
+
+export {changeAvailability, tutorsList, loginTutor, sessionsTutor, sessionComplete, sessionCancel}

@@ -9,9 +9,9 @@ import Login from "./pages/Login"
 import { useContext } from "react"
 import { AdminContext } from "./context/AdminContext"
 import { TutorContext } from "./context/TutorContext"
-import TutorDashboard from "./pages/tutor/Dashboard"
-import TutorProfile from "./pages/tutor/Profile"
-import TutorSessions from "./pages/tutor/Sessions"
+import TutorDashboard from "./pages/tutor/TutorDashboard"
+import TutorProfile from "./pages/tutor/TutorProfile"
+import TutorSessions from "./pages/tutor/TutorSessions"
 
 export default function App() {
 

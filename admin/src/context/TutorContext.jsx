@@ -10,6 +10,7 @@ const TutorContextProvider = (props) => {
     const [tToken, setTToken] = useState(localStorage.getItem('tToken')?localStorage.getItem('tToken'):"")
     const {backendUrl} = useContext(AppContext)
     const [sessions, setSessions] = useState([])
+    const [dashData, setDashData] = useState(false)
 
     const getSessions = async()=>{
         try {
@@ -33,6 +34,7 @@ const TutorContextProvider = (props) => {
             if(data.success){
                 toast.success(data.message)
                 getSessions()
+                getDashData()
             } else {
                 toast.error(data.message)
             }
@@ -49,6 +51,7 @@ const TutorContextProvider = (props) => {
             if(data.success){
                 toast.success(data.message)
                 getSessions()
+                getDashData()
             } else {
                 toast.error(data.message)
             }
@@ -58,8 +61,24 @@ const TutorContextProvider = (props) => {
 
         }
     }
+
+
+    const getDashData = async()=>{
+        try {
+            const {data} = await axios.get(backendUrl + '/api/tutor/dashboard', {headers:{ttoken:tToken}})
+            if(data.success){
+                setDashData(data.dashData)
+                console.log(data.dashData)
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            console.log(error)
+            toast.error(error.message)
+        }
+    }
     
-    const value = {tToken, setTToken, sessions, setSessions, getSessions, completeSession, cancelSession}
+    const value = {tToken, setTToken, sessions, setSessions, getSessions, completeSession, cancelSession, dashData, getDashData}
   
     return (
         <TutorContext.Provider value={value}>{props.children}</TutorContext.Provider>

@@ -108,7 +108,38 @@ const sessionCancel = async(req, res)=>{
     } catch (error) {
         console.log(error)
         res.json({success:false, message:error.message})
+
     }
 }
 
-export {changeAvailability, tutorsList, loginTutor, sessionsTutor, sessionComplete, sessionCancel}
+// API TO GET DASHBOARD DATA FRO TUTOR PANEL
+const tutorDashboard = async(req,res)=>{
+    try {
+        const tutId = req.userId
+        const sessions = await sessionModel.find({tutId})
+        let earnings = 0
+        let clients = []
+        sessions.map((session)=>{
+            if(!clients.includes(session.userId)){
+                clients.push(session.userId)
+            }
+            if(session.isCompleted){
+                earnings += session.amount
+            }
+        })
+
+        const dashData = {
+            earnings,
+            sessions:sessions.length,
+            clients:clients.length,
+            latestSessions:sessions.reverse().slice(0,5)
+        }
+
+        res.json({success:true, dashData})
+    } catch (error) {
+        console.log(error)
+        res.json({success:false, message:error.message})
+    }
+}
+
+export {changeAvailability, tutorsList, loginTutor, sessionsTutor, sessionComplete, sessionCancel, tutorDashboard}

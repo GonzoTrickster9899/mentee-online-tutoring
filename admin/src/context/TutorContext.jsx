@@ -11,6 +11,7 @@ const TutorContextProvider = (props) => {
     const {backendUrl} = useContext(AppContext)
     const [sessions, setSessions] = useState([])
     const [dashData, setDashData] = useState(false)
+    const [profileData, setProfileData] = useState(false)
 
     const getSessions = async()=>{
         try {
@@ -28,6 +29,7 @@ const TutorContextProvider = (props) => {
         }
     }
 
+
     const completeSession = async (sessionId)=>{
         try {
             const {data} = await axios.post(backendUrl + '/api/tutor/complete-session', {sessionId}, {headers: {tToken}})
@@ -44,6 +46,7 @@ const TutorContextProvider = (props) => {
 
         }
     }
+
 
     const cancelSession = async (sessionId)=>{
         try {
@@ -75,10 +78,25 @@ const TutorContextProvider = (props) => {
         } catch (error) {
             console.log(error)
             toast.error(error.message)
+
+        }
+    }
+
+    const getProfileData = async ()=> {
+        try {
+            const {data} = await axios.get(backendUrl + '/api/tutor/profile', {headers:{tToken}})
+            if(data.success){
+                setProfileData(data.profileData)
+                console.log(data.profileData)
+            }
+        } catch (error) {
+            console.log(error)
+            toast.error(error.message)
+            
         }
     }
     
-    const value = {tToken, setTToken, sessions, setSessions, getSessions, completeSession, cancelSession, dashData, getDashData}
+        const value = {tToken, setTToken, sessions, setSessions, getSessions, completeSession, cancelSession, dashData, getDashData, setProfileData, profileData, getProfileData}
   
     return (
         <TutorContext.Provider value={value}>{props.children}</TutorContext.Provider>

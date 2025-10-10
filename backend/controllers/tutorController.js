@@ -32,7 +32,7 @@ const tutorsList = async(req,res)=>{
     }
 }
 
-// APIC FOR TUTOR LOGIN
+// API FOR TUTOR LOGIN
 const loginTutor = async (req, res) => {
     try {
         const {email, password} = req.body
@@ -92,7 +92,7 @@ const sessionComplete = async(req, res)=>{
     }
 }
 
-// API MARK THE SESSION COMPLETED FOR TUTOR PANEL
+// API MARK THE SESSION CANCELLED FOR TUTOR PANEL
 const sessionCancel = async(req, res)=>{
     try {
         const tutId = req.userId
@@ -112,7 +112,7 @@ const sessionCancel = async(req, res)=>{
     }
 }
 
-// API TO GET DASHBOARD DATA FRO TUTOR PANEL
+// API TO GET DASHBOARD DATA FROM TUTOR PANEL
 const tutorDashboard = async(req,res)=>{
     try {
         const tutId = req.userId
@@ -142,4 +142,34 @@ const tutorDashboard = async(req,res)=>{
     }
 }
 
-export {changeAvailability, tutorsList, loginTutor, sessionsTutor, sessionComplete, sessionCancel, tutorDashboard}
+// API TO GET TUTOR PROFILE FOR TUTOR PANEL
+const tutorProfile = async(req,res)=>{
+    try {
+        const tutId = req.userId
+        const profileData = await tutorModel.findById(tutId).select('-password')
+        
+        res.json({success:true, profileData})
+    } catch (error) {
+        console.log(error)
+        res.json({success:false, message:error.message})
+
+    }
+}
+
+// API TO UPDATE TUTOR PROFILE FOR TUTOR PANEL
+const updateTutorProfile = async(req,res)=>{
+    try {
+        const tutId = req.userId
+        const {fees, address, available} = req.body
+        
+        await tutorModel.findByIdAndUpdate(tutId, {fees, address, available})
+
+        res.json({success:true, message:"Profile Updated"})
+    } catch (error) {
+        console.log(error)
+        res.json({success:false, message:error.message})
+        
+    }
+}
+
+export {changeAvailability, tutorsList, loginTutor, sessionsTutor, sessionComplete, sessionCancel, tutorDashboard, tutorProfile, updateTutorProfile}

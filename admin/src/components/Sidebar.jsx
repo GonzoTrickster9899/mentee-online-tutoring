@@ -50,7 +50,7 @@ const Sidebar = () => {
                         <FaSquarePlus className="text-lg sm:hidden md:flex"/>
                         <div className="hidden sm:flex">Add Tutor</div>
                     </NavLink>
-                    <div className="max-sm:ml-5 sm:mt-48">
+                    <div className="max-sm:ml-5 sm:mt-16">
                         <button onClick={logout} className="flexStart gap-x-2 lg:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl text-red-500">
                             <BiLogOut className="text-lg sm:hidden md:flex" />
                             <div className="hidden sm:flex">Logout</div>

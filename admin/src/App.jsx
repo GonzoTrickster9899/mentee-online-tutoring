@@ -1,6 +1,6 @@
 import { ToastContainer } from "react-toastify"
 import Sidebar from "./components/Sidebar"
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, Navigate } from 'react-router-dom'
 import AllSessions from "./pages/admin/AllSessions"
 import Dashboard from "./pages/admin/Dashboard"
 import AddTutor from "./pages/admin/AddTutor"
@@ -26,13 +26,14 @@ export default function App() {
           <Sidebar />
           <Routes>
             {/* ADMIN ROUTES */}
-            <Route path="/" element={<></>}/>
+            <Route path="/" element={<Navigate to="/admin-dashboard"/>}/>
             <Route path="/admin-dashboard" element={<Dashboard/>}/>
             <Route path="/all-sessions" element={<AllSessions/>}/>
             <Route path="/add-tutor" element={<AddTutor/>}/>
             <Route path="/tutors-list" element={<TutorsList/>}/>
 
             {/* TUTOR ROUTES */}
+            <Route path="/" element={<Navigate to="/tutor-dashboard"/>}/>
             <Route path="/tutor-dashboard" element={<TutorDashboard/>}/>
             <Route path="/tutor-profile" element={<TutorProfile/>}/>
             <Route path="/tutor-sessions" element={<TutorSessions/>}/>

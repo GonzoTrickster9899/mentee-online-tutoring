@@ -5,11 +5,35 @@ import userModel from "../models/userModels.js"
 import tutorModel from "../models/tutorModel.js";
 import sessionModel from "../models/sessionModel.js";
 import {v2 as cloudinary} from "cloudinary"
-import Strip from "stripe"
+import {
+    BookingConflictError,
+    BookingNotFoundError,
+    BookingPermissionError,
+    BookingStateError,
+    BookingValidationError,
+    cancelBooking,
+    reserveBooking,
+} from "../services/bookingService.js";
+import {
+    PaymentConfigurationError,
+    StripeWebhookSignatureError,
+    getStripeClient,
+    parseStripeWebhook,
+    processStripeEvent,
+} from "../services/paymentService.js";
+import { normalizeCurrency, paymentStatusForSession, toMinorUnits } from "../utils/bookingPayment.js";
 
-// STRIPE GATEWAY
-const stripe = new Strip(process.env.STRIPE_SECRET_KEY)
-const currency = process.env.CURRENCY
+const bookingModels = { tutorModel, userModel, sessionModel };
+
+const sendBookingError = (res, error) => {
+    if (error instanceof BookingValidationError) return res.status(400).json({success:false, message:error.message});
+    if (error instanceof BookingPermissionError) return res.status(403).json({success:false, message:error.message});
+    if (error instanceof BookingNotFoundError) return res.status(404).json({success:false, message:error.message});
+    if (error instanceof BookingConflictError) return res.status(409).json({success:false, message:error.message});
+    if (error instanceof BookingStateError) return res.status(409).json({success:false, message:error.message});
+    console.error("Booking operation failed", error);
+    return res.status(500).json({success:false, message:"Unable to complete the booking operation"});
+}
 
 // API TO REGISTER USER
 const registerUser = async(req,res)=>{
@@ -122,51 +146,18 @@ const bookSession = async (req,res)=>{
     try {
         const userId = req.userId
         const {tutId, slotDate, slotTime} = req.body
-
-        const tutData = await tutorModel.findById(tutId).select('-password')
-
-        if(!tutData.available){
-            return res.json({success:false, message:"Tutor not available"})
-        }
-
-        let slots_booked = tutData.slots_booked
-        
-        // Checking for slot availability
-        if(slots_booked[slotDate]){
-            if(slots_booked[slotDate].includes(slotTime)){
-                return res.json({success:false, message:"Slot not available"})
-            }else{
-                slots_booked[slotDate].push(slotTime)
-            }
-        } else {
-            slots_booked[slotDate] = []
-            slots_booked[slotDate].push(slotTime)
-        }
-
-        const userData = await userModel.findById(userId).select('-password')
-
-        const sessionData = {
+        const session = await reserveBooking({
+            models: bookingModels,
             userId,
             tutId,
-            userData,
-            tutData,
             slotDate,
             slotTime,
-            amount:tutData.fees,
-            date:Date.now()
-        }
-
-        const newSession = new sessionModel(sessionData)
-        await newSession.save()
-
-        // Save new slots dataa in tutData
-        await tutorModel.findByIdAndUpdate(tutId, {slots_booked})
-
-        res.json({success:true, message:"Session Booked"})
+            currency: process.env.CURRENCY,
+        })
+        res.status(201).json({success:true, message:"Session Booked", session})
         
     } catch (error) {
-        console.log(error)
-        res.json({success:false, message:error.message})
+        sendBookingError(res, error)
     }
 }
 
@@ -174,7 +165,7 @@ const bookSession = async (req,res)=>{
 const listSessions = async(req, res)=>{
     try{
         const userId = req.userId
-        const sessions = await sessionModel.find({userId})
+        const sessions = await sessionModel.find({userId}).sort({date:-1})
 
         res.json({success:true, sessions})
 
@@ -187,53 +178,53 @@ const listSessions = async(req, res)=>{
 // API FOR CANCEL THE SESSION
 const cancelSession  = async (req,res)=>{
     try{
-        const userId = req.userId
         const {sessionId} = req.body
-        const sessionData = await sessionModel.findById(sessionId)
-
-        // Verify session User
-        if(sessionData.userId !== userId){
-            return res.json({success:false, message:"Unauthorized access"})
-        }
-
-        await sessionModel.findByIdAndUpdate(sessionId, {cancelled:true})
-
-        // Release tutor slot
-        const {tutId, slotDate, slotTime} = sessionData
-        const tutData = await tutorModel.findById(tutId)
-
-        let slots_booked = tutData.slots_booked
-        slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime)
-
-        await tutorModel.findByIdAndUpdate(tutId, {slots_booked})
-
-        res.json({success:true, message:"Session Cancelled"})
+        const result = await cancelBooking({
+            models: bookingModels,
+            sessionId,
+            actor:{role:"student", id:req.userId},
+        })
+        res.json({success:true, message:result.idempotent ? "Session was already cancelled" : "Session Cancelled", session:result.session, idempotent:result.idempotent})
     } catch (error) {
-        console.log(error)
-        res.json({success:false, message:error.message})
+        sendBookingError(res, error)
     }
 }
 
 // API FOR STRIPE PAYMENT
 const paymentStripe = async(req,res)=>{
+    let claim
     try{
         const userId = req.userId
         const {sessionId} = req.body
-        const origin = req.headers.origin
-        
         const sessionData = await sessionModel.findById(sessionId)
-        if(!sessionData || sessionData.cancelled){
-            return res.json({success:false, message:"Session not found or cancelled"})
+        if(!sessionData) return res.status(404).json({success:false, message:"Session not found"})
+        if(String(sessionData.userId) !== String(userId)) return res.status(403).json({success:false, message:"You cannot pay for this session"})
+        if(sessionData.cancelled || sessionData.isCompleted) return res.status(409).json({success:false, message:"Cancelled or completed sessions cannot be paid"})
+        if(paymentStatusForSession(sessionData) === "paid") return res.status(409).json({success:false, message:"This session is already paid"})
+        if(!["unpaid", "failed", "expired"].includes(paymentStatusForSession(sessionData))) {
+            return res.status(409).json({success:false, message:"A payment checkout is already in progress"})
         }
 
-        // Verify session user
-        if(sessionData.userId !== userId){
-            return res.json({success:false, message:"Unauthorized access"})
-        }
+        const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, "")
+        if(!frontendUrl) return res.status(503).json({success:false, message:"Payment checkout is not configured"})
 
-        const amount = sessionData.amount * 100 // amount in cents
+        claim = await sessionModel.findOneAndUpdate(
+            {
+                _id:sessionId,
+                userId,
+                cancelled:false,
+                isCompleted:false,
+                payment:false,
+                paymentStatus:{$in:["unpaid", "failed", "expired"]},
+            },
+            {$set:{paymentStatus:"checkout_creating"}, $inc:{checkoutAttempt:1}},
+            {new:true},
+        )
+        if(!claim) return res.status(409).json({success:false, message:"Session payment state changed; refresh and try again"})
 
-        // Ceate Stripe Checkout Session
+        const currency = normalizeCurrency(claim.currency || process.env.CURRENCY)
+        const amountMinor = claim.amountMinor ?? toMinorUnits(claim.amount, currency)
+        const stripe = getStripeClient()
         const stripeSession = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [
@@ -244,46 +235,58 @@ const paymentStripe = async(req,res)=>{
                             name: `Session with ${sessionData.tutData.name}`,
                             description: `Subject: ${sessionData.tutData.subject}`
                         },
-                        unit_amount: amount,
+                        unit_amount: amountMinor,
                     },
                     quantity: 1,
                 }
             ],
             mode:'payment',
-            success_url: `${origin}/my-sessions?success=true&sessionId=${sessionId}`,
-            cancel_url: `${origin}/my-sessions?success=false`,
-        })
+            metadata:{sessionId:String(claim._id), userId:String(userId)},
+            client_reference_id:String(claim._id),
+            success_url: `${frontendUrl}/my-sessions?checkout=success`,
+            cancel_url: `${frontendUrl}/my-sessions?checkout=cancelled`,
+        }, {idempotencyKey:`mentee-session-${claim._id}-${claim.checkoutAttempt}`})
+
+        await sessionModel.findOneAndUpdate(
+            {_id:claim._id, paymentStatus:"checkout_creating", checkoutAttempt:claim.checkoutAttempt},
+            {$set:{
+                paymentStatus:"checkout_created",
+                stripeCheckoutSessionId:stripeSession.id,
+                currency,
+                amountMinor,
+            }},
+        )
 
         res.json({success:true, session_url:stripeSession.url})
     } catch (error) {
-        console.log(error)
-        res.json({success:false, message:error.message})
-    }
-}
-
-// API TO VERIFY STRIPE PAYMENT (TEMPORARY METHOD - SECURE METHOD IS USING WEBHOOKS)
-
-const verifyStripe = async(req, res) => {
-    try {
-        const {sessionId} = req.query
-        console.log("Verifying paymenf for session ID:", sessionId)
-
-        const session = await sessionModel.findById(sessionId)
-        if(!session){
-            console.log("Session not found for Id:", sessionId)
-            return res.json({success:false, message:"Session not found"})
+        console.error("Stripe checkout creation failed", error)
+        if(claim){
+            await sessionModel.updateOne(
+                {_id:claim._id, paymentStatus:"checkout_creating", checkoutAttempt:claim.checkoutAttempt},
+                {$set:{paymentStatus:"failed"}},
+            )
         }
-
-        // Update payment status to true
-        session.payment = true
-        await session.save()
-        console.log('Payment status updated for session:', session)
-
-        res.json({success:true, message:"Payment status updated"})
-    } catch (error) {
-        console.log(error)
-        res.json({success:false, message:error.message})
+        if (error instanceof PaymentConfigurationError) return res.status(503).json({success:false, message:"Payment checkout is not configured"})
+        res.status(500).json({success:false, message:"Unable to create payment checkout"})
     }
 }
 
-export {registerUser, loginUser, getProfile, updateProfile, bookSession, listSessions, cancelSession, paymentStripe, verifyStripe}
+const stripeWebhook = async(req, res) => {
+    try {
+        const stripe = getStripeClient()
+        const event = parseStripeWebhook({
+            rawBody:req.body,
+            signature:req.headers["stripe-signature"],
+            secret:process.env.STRIPE_WEBHOOK_SECRET,
+            stripeClient:stripe,
+        })
+        await processStripeEvent({event, sessionModel})
+        res.status(200).json({received:true})
+    } catch (error) {
+        if(error instanceof StripeWebhookSignatureError) return res.status(400).json({received:false, message:"Invalid webhook signature"})
+        console.error("Stripe webhook processing failed", error)
+        res.status(500).json({received:false, message:"Webhook processing failed"})
+    }
+}
+
+export {registerUser, loginUser, getProfile, updateProfile, bookSession, listSessions, cancelSession, paymentStripe, stripeWebhook}

@@ -7,7 +7,6 @@ const TutorsList = () => {
 
   useEffect(()=>{
     if(aToken){
-      console.log(tutors)
       getAllTutors()
     }
   }, [aToken])

@@ -12,9 +12,19 @@ const AllSessions = () => {
   useEffect(()=>{
     if(aToken){
       getAllSessions()
-      console.log(sessions)
     }
   }, [aToken])
+
+  const getStatus = (session) => {
+    if(session.cancelled) return "Cancelled";
+    if(session.isCompleted) return "Completed";
+    if(session.paymentStatus === "paid") return "Paid / scheduled";
+    if(["checkout_creating", "checkout_created"].includes(session.paymentStatus)) return "Payment pending";
+    if(session.paymentStatus === "failed") return "Payment failed";
+    if(session.paymentStatus === "expired") return "Checkout expired";
+    return "Pending payment";
+  };
+  const canCancel = (session) => !session.cancelled && !session.isCompleted && ["unpaid", "failed", "expired"].includes(session.paymentStatus || "unpaid");
 
 
   return (
@@ -29,7 +39,8 @@ const AllSessions = () => {
           <h5>Fees</h5>
           <h5>Status</h5>
         </div>
-        {[...sessions].reverse().map((session, i)=>(
+        {sessions.length === 0 && <p className="p-4">No sessions found.</p>}
+        {sessions.map((session, i)=>(
           <div key={i} className='flex flex-wrap justify-between gap-2 md:grid grid-cols-[0.5fr_2fr_1fr_2fr_2fr_1fr_1fr] grid-flow-col px-6 py-3 mb-1 bg-white items-center rounded text-[13px] font-medium'>
             <h5 className="h5 sm:hidden md:flex">{i + 1}</h5>
             <div className="flexStart gap-x-1">
@@ -50,12 +61,10 @@ const AllSessions = () => {
             <p className='max-lg:text-[12px]'>{session.slotDate}, {session.slotTime}</p>
             <p>{currency}{session.amount}</p>
             <div className='flex flex-col gap-2'>
-              <button onClick={() => cancelSession(session._id)} disabled={session.cancelled} className={`${session.isCompleted ? "hidden" : "block"} disabled:text-red-500 ${session.cancelled ? "btn-ghost" : "btn-light"} max-md:!px-1 !py-1 !text-xs !rounded`}>
+              <p className="text-xs">{getStatus(session)}</p>
+              <button onClick={() => cancelSession(session._id)} disabled={!canCancel(session)} className={`${session.isCompleted || session.cancelled ? "hidden" : "block"} disabled:cursor-not-allowed disabled:opacity-60 btn-light max-md:!px-1 !py-1 !text-xs !rounded`}>
                   {session.cancelled ? "Cancelled" : "Cancel"}
               </button>
-              <button disabled={session.isCompleted} className={`${!session.isCompleted ? "hidden" : "block"} disabled:cursor-not-allowed disabled:text-green-500 max-md:!px-1 !py-1 !text-xs !rounded`}>
-                  {session.cancelled ? "Cancelled" : "Cancel"}
-              </button>                 
             </div>
           </div>
         ))}

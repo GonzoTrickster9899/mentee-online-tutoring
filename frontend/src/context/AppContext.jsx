@@ -12,20 +12,27 @@ const AppContextProvider = (props) => {
     const currency = "$"
     const backendUrl = import.meta.env.VITE_BACKEND_URL
     const [tutors, setTutors] = useState([])
+    const [tutorsLoading, setTutorsLoading] = useState(false)
+    const [tutorsError, setTutorsError] = useState("")
     const [userData, setUserData] = useState(false)
 
     const getTutorsData = async ()=>{
+        setTutorsLoading(true)
+        setTutorsError("")
         try {
             const {data} = await axios.get(backendUrl + "/api/tutor/list")
             if(data.success){
-                // console.log(data.tutors)
                 setTutors(data.tutors)
             } else {
+                setTutorsError(data.message || "Unable to load tutors")
                 toast.error(data.message)
             }
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)            
+            const message = error.response?.data?.message || "Unable to load tutors"
+            setTutorsError(message)
+            toast.error(message)
+        } finally {
+            setTutorsLoading(false)
         }
     }
 
@@ -40,8 +47,7 @@ const AppContextProvider = (props) => {
                 toast.error(data.message)
             }
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || "Unable to load your profile")
         }
     };
 
@@ -59,6 +65,8 @@ const AppContextProvider = (props) => {
 
     const value = {
         tutors, 
+        tutorsLoading,
+        tutorsError,
         navigate, 
         currency, 
         token, 

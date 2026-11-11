@@ -31,8 +31,7 @@ const TutorProfile = () => {
         toast.error(data.message)
       }
     } catch (error) {
-      console.log(error)
-      toast.error(error.message)
+      toast.error(error.response?.data?.message || "Unable to update your profile")
     }
   }
 
@@ -80,7 +79,7 @@ const TutorProfile = () => {
                 type="checkbox"
                 name="available"
                 checked={profileData.available}
-                onChange={(e)=>setProfileData(prev=>({...prev, available: !prev.available}))}
+                onChange={()=>setProfileData(prev=>({...prev, available: !prev.available}))}
                 className="w-4 h-4"
               />
             ) : (

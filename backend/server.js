@@ -6,12 +6,17 @@ import connectCloudinary from "./config/cloudinary.js"
 import adminRouter from "./routes/adminRoute.js"
 import tutorRouter from "./routes/tutorRoute.js"
 import userRouter from "./routes/userRoute.js"
+import { stripeWebhook } from "./controllers/userController.js"
 
 const app = express() // Initialize Express application
 const port = process.env.PORT || 4000
 
 connectDB() // Establish connection to the database
 connectCloudinary() // Setup cloudinary for image storage
+
+// Stripe requires the unparsed request bytes for signature verification. This route must remain
+// before express.json() and is intentionally not behind browser authentication or CORS middleware.
+app.post('/api/user/stripe-webhook', express.raw({type:'application/json'}), stripeWebhook)
 
 // MiddLeware Setup
 app.use(express.json()) // Enables JSON request body parsing

@@ -10,9 +10,10 @@ import { FaStar } from 'react-icons/fa'
 const Tutors = () => {
 
     const { subject: subjectParam } = useParams(); // Capture subject param from URL
-    const { navigate, tutors } = useContext(AppContext);
+    const { navigate, tutors, tutorsLoading, tutorsError, getTutorsData } = useContext(AppContext);
     const [showFilters, setShowFilters] = useState(false);
     const [filteredTutors, setFilteredTutors] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
 
     // Handle Subject Click
     const handleSubjectClick = (subjectName)=>{
@@ -23,13 +24,17 @@ const Tutors = () => {
     useEffect(()=>{
         if(subjectParam){
             setFilteredTutors(
-                tutors.filter((tutor)=> tutor.subject === 
-                subjectParam)
+                tutors.filter((tutor)=> tutor.subject === subjectParam)
             );
         } else {
             setFilteredTutors(tutors); //Show all tutors when no subject is selected
         }
     },[subjectParam, tutors])
+
+    const visibleTutors = filteredTutors.filter((tutor) => {
+        const query = searchQuery.trim().toLowerCase();
+        return !query || [tutor.name, tutor.subject, tutor.qualification].some((value) => value?.toLowerCase().includes(query));
+    });
 
     return (
         <div className="max-padd-container py-28">
@@ -52,6 +57,16 @@ const Tutors = () => {
                     Our platform is designed to empower professional tutors who are passionate about sharing knowledge and shaping futures.
                 </p>
             </div>
+            <label className="block max-w-md mx-auto mb-6">
+                <span className="sr-only">Search tutors</span>
+                <input
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    className="w-full rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-secondary"
+                    placeholder="Search by tutor, subject, or qualification"
+                    type="search"
+                />
+            </label>
             {/* Tabs */}
             <button onClick={()=> setShowFilters(prev=>!prev)} className={`btn-secondary !py-1.5 mb-5 !rounded sm:hidden transition-all`}>
                 Filters
@@ -62,8 +77,16 @@ const Tutors = () => {
                 ))}
             </div>
             {/* Container / Tutor Cards*/}
+            {tutorsLoading && <p className="text-center" role="status">Loading tutors…</p>}
+            {tutorsError && (
+                <div className="text-center" role="alert">
+                    <p>{tutorsError}</p>
+                    <button type="button" className="btn-secondary mt-3" onClick={getTutorsData}>Try again</button>
+                </div>
+            )}
+            {!tutorsLoading && !tutorsError && visibleTutors.length === 0 && <p className="text-center">No tutors match your filters.</p>}
             <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-x-10 sm:gap-y-12'>
-                {filteredTutors?.map((tutor,i) => (
+                {visibleTutors.map((tutor,i) => (
                     <div key={i} className='rounded-xl overflow-hidden relative group'>
                         <div>
                             <img src={tutor.image} alt="" className='overflow-hidden'/>

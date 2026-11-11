@@ -19,40 +19,17 @@ const Contact = () => {
                             Get <span className="font-[400]">in Touch</span>
                         </h3>
                         <p>
-                            Have questions or need help? Send us a message, and we'll get back to you as soon as possible.
+                            This page is informational. A contact-submission service has not been configured yet, so messages entered here would not be sent.
                         </p>
                     </div>
-                    <form>
+                    <div aria-label="Contact form unavailable" className="rounded bg-white p-4 ring-1 ring-slate-900/5">
                         <div className="flex gap-x-5">
                             <div className="w-1/2 mb-4">
-                                <input 
-                                    type="text"
-                                    id="name"
-                                    placeholder="Enter your name"
-                                    className="w-full mt-1 py-1.5 px-3 border-none ring-1 ring-slate-900/5 regular-14 bg-white rounded"
-                                />
+                                <p className="text-sm text-gray-600">Contact form unavailable</p>
                             </div>
-                            <div className="w-1/2 mb-4">
-                                <input 
-                                    type="email"
-                                    id="email"
-                                    placeholder="Enter your email"
-                                    className="w-full mt-1 py-1.5 px-3 border-none ring-1 ring-slate-900/5 regular-14 bg-white rounded"
-                                />
-                            </div>
+                            <div className="w-1/2 mb-4" />
                         </div>
-                        <div className="mb-4">
-                            <textarea
-                                type="message"
-                                rows="4"
-                                placeholder="Enter your name"
-                                className="w-full mt-1 py-1.5 px-3 border-none ring-1 ring-slate-900/5 regular-14 bg-white rounded resize-none"
-                            ></textarea>
-                        </div>
-                        <button type="submit" className="btn-secondary !round shadow-sm">
-                            Send Message
-                        </button>
-                    </form>
+                    </div>
                 </div>
 
                 {/* Contact Details */}

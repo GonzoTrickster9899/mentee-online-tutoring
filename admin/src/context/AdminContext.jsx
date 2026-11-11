@@ -24,8 +24,7 @@ const AdminContextProvider = (props) => {
                 toast.error(data.message)
             }
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || "Unable to load tutors")
         }
     }
 
@@ -39,8 +38,7 @@ const AdminContextProvider = (props) => {
                 toast.error(data.message)
             }
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || "Unable to update availability")
         }
     }
 
@@ -54,8 +52,7 @@ const AdminContextProvider = (props) => {
                 toast.error(data.message)
             }
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || "Unable to load sessions")
 
         }
     }
@@ -72,8 +69,7 @@ const AdminContextProvider = (props) => {
                 toast.error(data.message)
             }
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || "Unable to cancel this session")
 
         }
     }
@@ -85,13 +81,11 @@ const AdminContextProvider = (props) => {
 
             if(data.success){
                 setDashData(data.dashData)
-                console.log(dashData)
             } else {
                 toast.error(data.message)
             }
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || "Unable to load dashboard data")
         }
     }
 

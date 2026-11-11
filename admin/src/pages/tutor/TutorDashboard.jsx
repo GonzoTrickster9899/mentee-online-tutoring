@@ -19,6 +19,10 @@ const TutorDashboard = () => {
     }
   }, [tToken])
 
+  const canCancel = (session) => !session.cancelled && !session.isCompleted && ["unpaid", "failed", "expired"].includes(session.paymentStatus || "unpaid");
+  const canComplete = (session) => !session.cancelled && !session.isCompleted && session.paymentStatus === "paid";
+  const getStatus = (session) => session.cancelled ? "Cancelled" : session.isCompleted ? "Completed" : session.paymentStatus === "paid" ? "Paid / scheduled" : "Pending payment";
+
   return (
     dashData && (
       <div className='px-2 sm:px-8 py-12 h-screen sm:pl-[23%] lg:w-11/12'>
@@ -76,15 +80,16 @@ const TutorDashboard = () => {
                   {session.slotDate}, {session.slotTime}
                 </p>
                 <div className='flex flex-col gap-2'>
+                  <p className="text-xs">{getStatus(session)}</p>
                   <div className="flex flex-col gap-2">
                     <button 
                       onClick={() => cancelSession(session._id)} 
-                      disabled={session.cancelled} 
-                      className={`${session.isCompleted ? "hidden" : "block"} disabled:cursor-not-allowed disabled:text-red-500 ${session.cancelled ? "btn-ghost" : "btn-light"} max-md:!py-1 !py-1 !text-xs !rounded`}
+                      disabled={!canCancel(session)}
+                      className={`${session.isCompleted || session.cancelled ? "hidden" : "block"} disabled:cursor-not-allowed disabled:opacity-60 btn-light max-md:!py-1 !py-1 !text-xs !rounded`}
                     >
                       {session.cancelled ? "Cancelled" : "Cancel"}
                     </button>
-                    <button onClick={() => completeSession(session._id)} disabled={session.isCompleted} className={`${session.cancelled ? "hidden" : "block"} disabled:cursor-not-allowed disabled:text-green-500 ${session.isCompleted ? "btn-ghost" : "btn-light"} max-md:!px-1 !py-1 !text-xs !rounded`}>
+                    <button onClick={() => completeSession(session._id)} disabled={!canComplete(session)} className={`${session.cancelled || session.isCompleted ? "hidden" : "block"} disabled:cursor-not-allowed disabled:opacity-60 btn-light max-md:!px-1 !py-1 !text-xs !rounded`}>
                         {session.isCompleted ? "Completed" : "Complete"}
                     </button>                  
                   </div>

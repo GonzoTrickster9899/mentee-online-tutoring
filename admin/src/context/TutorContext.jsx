@@ -19,13 +19,11 @@ const TutorContextProvider = (props) => {
 
             if(data.success){
                 setSessions(data.sessions)
-                console.log(data.sessions)
             } else {
                 toast.error(data.message)
             }
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || "Unable to load sessions")
         }
     }
 
@@ -41,8 +39,7 @@ const TutorContextProvider = (props) => {
                 toast.error(data.message)
             }
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || "Unable to update the session")
 
         }
     }
@@ -59,8 +56,7 @@ const TutorContextProvider = (props) => {
                 toast.error(data.message)
             }
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || "Unable to update the session")
 
         }
     }
@@ -71,13 +67,11 @@ const TutorContextProvider = (props) => {
             const {data} = await axios.get(backendUrl + '/api/tutor/dashboard', {headers:{ttoken:tToken}})
             if(data.success){
                 setDashData(data.dashData)
-                console.log(data.dashData)
             } else {
                 toast.error(data.message)
             }
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || "Unable to load dashboard data")
 
         }
     }
@@ -87,11 +81,9 @@ const TutorContextProvider = (props) => {
             const {data} = await axios.get(backendUrl + '/api/tutor/profile', {headers:{tToken}})
             if(data.success){
                 setProfileData(data.profileData)
-                console.log(data.profileData)
             }
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || "Unable to load your profile")
             
         }
     }

@@ -15,8 +15,8 @@ import TutorSessions from "./pages/tutor/TutorSessions"
 
 export default function App() {
 
-  const {aToken, setAToken} = useContext(AdminContext)
-  const {tToken, setTToken} = useContext(TutorContext)
+  const {aToken} = useContext(AdminContext)
+  const {tToken} = useContext(TutorContext)
 
   return aToken || tToken ? (
     <main>

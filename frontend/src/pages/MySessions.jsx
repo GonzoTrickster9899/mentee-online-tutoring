@@ -1,26 +1,35 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { AppContext } from '../context/AppContext';
 import axios from "axios";
 import { toast } from "react-toastify";
 
 const MySessions = () => {
-    const {tutors, currency, token, backendUrl, getTutorsData } = 
+    const {currency, token, backendUrl, getTutorsData} =
         useContext(AppContext);
     const [sessions, setSessions] = useState([])
+    const [loading, setLoading] = useState(false)
+    const [loadError, setLoadError] = useState("")
 
-    const getUserSessions = async ()=> {
+    const getUserSessions = useCallback(async ()=> {
+        setLoading(true)
+        setLoadError("")
         try {
             const {data} = await axios.get(backendUrl + "/api/user/sessions", {
                 headers:{ token },
             });
             if (data.success) {
-                setSessions(data.sessions.reverse());
+                setSessions(data.sessions);
+            } else {
+                setLoadError(data.message || "Unable to load sessions");
             }
         } catch (error) {
-            console.log(error);
-            toast.error(error.message);
+            const message = error.response?.data?.message || "Unable to load sessions";
+            setLoadError(message);
+            toast.error(message);
+        } finally {
+            setLoading(false);
         }
-    };
+    }, [backendUrl, token]);
 
     const cancelSession = async (sessionId) => {
         try {
@@ -35,8 +44,7 @@ const MySessions = () => {
             }
 
         } catch (error) {
-            console.log(error);
-            toast.error(error.message);
+            toast.error(error.response?.data?.message || "Unable to cancel this session");
 
         }
     }
@@ -50,47 +58,40 @@ const MySessions = () => {
                 toast.error(data.message)
             }
         } catch (error) {
-            console.log(error);
-            toast.error(error.message);
+            toast.error(error.response?.data?.message || "Unable to start checkout");
         }
     }
 
     useEffect(()=>{
-        const updatePaymentStatus = async ()=>{
-            try {
-                const currentUrl = new URL(window.location.href)
-                const success = currentUrl.searchParams.get('success')
-                const sessionId = currentUrl.searchParams.get('sessionId')
-
-                if(success === "true" && sessionId){
-                    const {data} = await axios.get(`${backendUrl}/api/user/verify-stripe?sessionId=${sessionId}`, {headers:{token}})
-
-                    if(data.success){
-                        toast.success('Payment successful')
-                        getUserSessions()
-                        // Remove query params from url
-                        window.history.replaceState({}, document.title, "/my-sessions")
-                    } 
-                }
-            } catch (error) {
-                console.log(error)
-                toast.error(error.message)
-            }
+        if(!token) return;
+        const currentUrl = new URL(window.location.href);
+        if(currentUrl.searchParams.get('checkout') === "success"){
+            toast.info("Checkout returned. Payment confirmation will appear after secure verification.");
+            window.history.replaceState({}, document.title, "/my-sessions");
         }
+        getUserSessions();
+    }, [token, getUserSessions]);
 
-        if(token && backendUrl) {
-            updatePaymentStatus()
-        }
-    }, [token, backendUrl, getUserSessions])
+    const getStatus = (session) => {
+        if(session.cancelled) return "Cancelled";
+        if(session.isCompleted) return "Completed";
+        if(session.paymentStatus === "paid") return "Paid / confirmed";
+        if(session.paymentStatus === "checkout_creating" || session.paymentStatus === "checkout_created") return "Payment pending";
+        if(session.paymentStatus === "failed") return "Payment failed";
+        if(session.paymentStatus === "expired") return "Checkout expired";
+        if(session.paymentStatus === "legacy_paid_unverified") return "Payment verification pending";
+        return "Pending payment";
+    };
 
-    useEffect(() => {
-        if(token){
-            getUserSessions()
-        }
-    }, [token]);
+    const canPay = (session) => !session.cancelled && !session.isCompleted && ["unpaid", "failed", "expired"].includes(session.paymentStatus || "unpaid");
+    const canCancel = (session) => !session.cancelled && !session.isCompleted && ["unpaid", "failed", "expired"].includes(session.paymentStatus || "unpaid");
 
     return (
         <div className='max-padd-container py-28'>
+            <h1 className="h2 mb-5">My Sessions</h1>
+            {loading && <p role="status">Loading your sessions…</p>}
+            {loadError && <div role="alert"><p>{loadError}</p><button className="btn-secondary mt-3" onClick={getUserSessions}>Try again</button></div>}
+            {!loading && !loadError && sessions.length === 0 && <p>You have no sessions yet.</p>}
             {sessions.map((session, i)=>(
                 <div key={i} className='bg-white px-6 py-3 mb-2 rounded-lg'>
                     <div className='flex gap-x-3 w-full'>
@@ -118,8 +119,8 @@ const MySessions = () => {
                                     </div>
                                     <div className="hidden sm:flex items-center gap-x-2">
                                         <h4 className='medium-14'>Address:</h4>
-                                        <p>{session.tutData.location?.city}</p>
-                                        <p>{session.tutData.location?.country}</p>
+                                        <p>{session.tutData.address?.city}</p>
+                                        <p>{session.tutData.address?.country}</p>
                                     </div>
                                     <div className="flex items-center gap-x-2">
                                         <h4 className='medium-14'>Fee</h4>
@@ -137,10 +138,11 @@ const MySessions = () => {
                                 </div>
                                 {/* Status & Button */}
                                 <div className="flex flex-col gap-2">
-                                    <button onClick={() => sessionStripe(session._id)} disabled={session.payment || session.isCompleted} className={`${(session.cancelled) ? "hidden" : "block"} disabled:cursor-not-allowed disabled:text-green-500 ${session.payment || session.isCompleted ? "btn-ghost" : "btn-light"} max-md:!px-1 !py-1 !text-xs !rounded`}>
-                                        {session.isCompleted ? "Completed" : session.payment ? "Paid" : "Pay"}
+                                    <p className="text-xs font-semibold" aria-label={`Session status: ${getStatus(session)}`}>{getStatus(session)}</p>
+                                    <button onClick={() => sessionStripe(session._id)} disabled={!canPay(session)} className={`${session.cancelled ? "hidden" : "block"} disabled:cursor-not-allowed disabled:opacity-60 btn-light max-md:!px-1 !py-1 !text-xs !rounded`}>
+                                        Pay securely
                                     </button>
-                                    <button onClick={() => cancelSession(session._id)} disabled={session.cancelled} className={`${session.isCompleted || session.payment ? "hidden" : "block"} disabled:cursor-not-allowed disabled:text-red-500 ${session.cancelled ? "btn-ghost" : "btn-light"} max-md:!px-1 !py-1 !text-xs !rounded`}>
+                                    <button onClick={() => cancelSession(session._id)} disabled={!canCancel(session)} className={`${session.isCompleted || session.cancelled ? "hidden" : "block"} disabled:cursor-not-allowed disabled:opacity-60 btn-light max-md:!px-1 !py-1 !text-xs !rounded`}>
                                         {session.cancelled ? "Cancelled" : "Cancel"}
                                     </button>
                                 </div>

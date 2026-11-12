@@ -1,5 +1,4 @@
 import React, { useContext, useState } from 'react';
-import profileImage from "../assets/user.jpg";
 import upload_icon from "../assets/upload_icon.png";
 import { AppContext } from "../context/AppContext" ;
 import axios from "axios";
@@ -8,10 +7,20 @@ import { toast } from "react-toastify";
 const MyProfile = () => {
     const [selectedImage, setSelectedImage] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const {userData, setUserData, token, backendUrl, loadUserProfileData} = 
         useContext(AppContext);
 
     const handleProfileUpdate = async () => {
+        if(!userData?.name?.trim() || !userData?.phone?.trim() || !userData?.dob || !userData?.gender){
+            toast.error("Name, phone, date of birth, and gender are required.");
+            return;
+        }
+        if(selectedImage && !selectedImage.type.startsWith("image/")){
+            toast.error("Please choose an image file.");
+            return;
+        }
+        setIsSaving(true);
         try{
             const formData = new FormData()
 
@@ -40,8 +49,9 @@ const MyProfile = () => {
                 toast.error(data.message)
             }
         } catch (error){
-            console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || "Unable to update your profile")
+        } finally {
+            setIsSaving(false)
         }
     }
 
@@ -147,9 +157,10 @@ const MyProfile = () => {
                                 setIsEditing(true);
                             }
                         }} 
-                        className='mt-6 btn-secondary min-w-64'
+                        disabled={isSaving}
+                        className='mt-6 btn-secondary min-w-64 disabled:cursor-not-allowed disabled:opacity-60'
                         >
-                            {isEditing ? "Save Changes" : "Edit Profile"}
+                            {isSaving ? "Saving…" : isEditing ? "Save Changes" : "Edit Profile"}
                     </button>
                 </div>
             </div>

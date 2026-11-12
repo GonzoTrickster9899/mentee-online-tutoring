@@ -5,6 +5,15 @@ import tutorModel from "../models/tutorModel.js";
 import sessionModel from "../models/sessionModel.js";
 import userModel from "../models/userModels.js";
 import jwt from "jsonwebtoken"
+import { cancelBooking, BookingNotFoundError, BookingStateError } from "../services/bookingService.js";
+import { isVerifiedPaid } from "../utils/bookingPayment.js";
+
+const sendAdminCancellationError = (res, error) => {
+    if (error instanceof BookingNotFoundError) return res.status(404).json({success:false, message:error.message});
+    if (error instanceof BookingStateError) return res.status(409).json({success:false, message:error.message});
+    console.error("Admin cancellation failed", error);
+    return res.status(500).json({success:false, message:"Unable to cancel session"});
+}
 
 // API FOR ADDING A TUTOR FOR ADMIN PANEL
 const addTutor = async (req,res) =>{
@@ -51,6 +60,10 @@ const addTutor = async (req,res) =>{
                 message:"Please enter strong password",
             });
         }
+        const numericFees = Number(fees)
+        if(!Number.isFinite(numericFees) || numericFees <= 0 || numericFees > 100000){
+            return res.status(400).json({success:false, message:"Fees must be a positive amount"})
+        }
         
         // Hashing the password
         const salt = await bcrypt.genSalt(10);
@@ -77,7 +90,7 @@ const addTutor = async (req,res) =>{
             subject,
             experience,
             about,
-            fees,
+            fees:numericFees,
             address: JSON.parse(address),
             available: true,
             date: Date.now(),
@@ -128,7 +141,7 @@ const allTutors = async (req,res)=>{
 // API TO GET ALL SESSION LIST
 const sessionsAdmin = async (req, res) => {
     try {
-        const sessions = await sessionModel.find({});
+        const sessions = await sessionModel.find({}).sort({date:-1});
         res.json({ success: true, sessions });
     } catch (error) {
         console.log(error);
@@ -139,25 +152,15 @@ const sessionsAdmin = async (req, res) => {
 // API TO CANCEL THE SESSION
 const sessionCancel  = async (req,res)=>{
     try{
-        const userId = req.userId
         const {sessionId} = req.body
-        const sessionData = await sessionModel.findById(sessionId)
-
-        await sessionModel.findByIdAndUpdate(sessionId, {cancelled:true})
-
-        // Release tutor slot
-        const {tutId, slotDate, slotTime} = sessionData
-        const tutData = await tutorModel.findById(tutId)
-
-        let slots_booked = tutData.slots_booked
-        slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime)
-
-        await tutorModel.findByIdAndUpdate(tutId, {slots_booked})
-
-        res.json({success:true, message:"Session Cancelled"})
+        const result = await cancelBooking({
+            models:{tutorModel, sessionModel},
+            sessionId,
+            actor:{role:"admin"},
+        })
+        res.json({success:true, message:result.idempotent ? "Session was already cancelled" : "Session Cancelled", session:result.session, idempotent:result.idempotent})
     } catch (error) {
-        console.log(error)
-        res.json({success:false, message:error.message})
+        sendAdminCancellationError(res, error)
     }
 }
 
@@ -167,12 +170,16 @@ const adminDashboard = async (req,res)=>{
         const tutors = await tutorModel.find({})
         const users = await userModel.find({})
         const sessions = await sessionModel.find({})
+        const revenue = sessions.reduce((total, session) => (
+            session.isCompleted && isVerifiedPaid(session) ? total + session.amount : total
+        ), 0)
 
         const dashData = {
             tutors: tutors.length,
             sessions: sessions.length,
             clients: users.length,
-            latestSessions: sessions.reverse().slice(0, 5)
+            revenue,
+            latestSessions: sessions.sort((a,b) => b.date - a.date).slice(0, 5)
         }
 
         res.json({success:true, dashData})

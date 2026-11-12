@@ -17,7 +17,6 @@ const SimilarTutors = ({tutId, subject}) => {
 
     {/* 
     useEffect(()=>{
-        console.log("Similar Tutors:", simTutors)
     }, [simTutors])
     */}
 

@@ -19,7 +19,6 @@ const Login = () => {
             e.preventDefault()
             if(currState === "Admin"){
                 const {data} = await axios.post(backendUrl + '/api/admin/login', {email, password})
-                console.log(data)
                 if(data.success){
                     localStorage.setItem('aToken', data.token)
                     setAToken(data.token)
@@ -32,13 +31,12 @@ const Login = () => {
                     localStorage.setItem('tToken', data.token)
                     setTToken(data.token)
                     navigate('/tutor-dashboard')
-                    console.log(data.token)
                 } else {
                     toast.error(data.message)
                 }
             }
         } catch (error) {
-            
+            toast.error(error.response?.data?.message || "Unable to sign in")
         }
     }
 

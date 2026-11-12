@@ -1,0 +1,21 @@
+# Local credentials. Safe placeholder templates remain versioned.
+.env
+.env.*
+!.env.example
+!.env.*.example
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+
+# Local deployment metadata and generated dependencies/build artifacts.
+.vercel/
+**/.vercel/
+node_modules/
+**/node_modules/
+.vite/
+**/.vite/
+dist/
+**/dist/
+coverage/
+**/coverage/

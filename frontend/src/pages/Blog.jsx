@@ -4,6 +4,7 @@ import { blogs } from '../assets/data'
 const Blog = () => {
     return (
         <div className='max-padd-container bg-primary py-16 xl:py-28'>
+            <p className="mb-4 text-sm text-gray-600">Articles are static content in this MVP.</p>
             {/* Container */}
             <div className='grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-y-12 pt-6'>
                 {blogs.map((blog)=>(

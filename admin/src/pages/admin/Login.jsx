@@ -26,7 +26,7 @@ const Login = () => {
                 }
             } 
         } catch (error) {
-
+            toast.error(error.response?.data?.message || "Unable to sign in")
         }
     }
 
